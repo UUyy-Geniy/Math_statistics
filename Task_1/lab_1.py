@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from utils import get_distribution, get_density, types
 
 num_bins = 20
@@ -11,8 +12,13 @@ def plot_hist():
         fig.suptitle(name)
         for i in range(len(sizes)):
             array = get_distribution(name, sizes[i])
-            n, bins, patches = ax[i].hist(array, num_bins, density=True, edgecolor='blue', alpha=0.2)
-            ax[i].plot(bins, get_density(name, bins), color='blue', linewidth=1)
+            ax[i].hist(array, num_bins, density=True, edgecolor='blue', alpha=0.2)
+
+            if name == 'cauchy' and (sizes[i] == 50 or sizes[i] == 1000):
+                ax[i].set_yscale('log')
+
+            x = np.linspace(min(array), max(array), 1000)
+            ax[i].plot(x, get_density(name, x), color='blue', linewidth=1)
             ax[i].set_title("n = " + str(sizes[i]))
         plt.show()
 
