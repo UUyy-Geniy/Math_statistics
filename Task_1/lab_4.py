@@ -6,10 +6,14 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', None)
+pd.set_option('display.max_rows', None)
 
-#INTERVAL CONSTANTS
+# INTERVAL CONSTANTS
 SIGNIFICANT = 0.05
-CONFIDENTIAL_LEVEL = 1 - SIGNIFICANT/2
+CONFIDENTIAL_LEVEL = 1 - SIGNIFICANT / 2
 
 
 def get_interval(name: str, fun, *args):
@@ -20,7 +24,10 @@ def get_interval(name: str, fun, *args):
             "mean_max": [],
             "dev_min": [],
             "dev": [],
-            "dev_max": []}
+            "dev_max": [],
+            'dev_interval_min': [],
+            'dev_interval_max': [],
+            }
     figure, axes = plt.subplots(1, 2 * 2, figsize=(20, 10))
     for index, amount in enumerate([20, 100]):
         sample = fun(*args, size=amount)
@@ -45,6 +52,8 @@ def get_interval(name: str, fun, *args):
         data['dev_max'].append(dev_max)
         data['mean'].append(mean)
         data['dev'].append(dev)
+        data['dev_interval_min'].append(mean_min - dev_max)
+        data['dev_interval_max'].append(mean_max + dev_max)
 
         sns.histplot(sample, ax=axes[index], stat='density', color='#FFEFD0')
         axes[index].axvline(x=mean_min, color='#D400C9', linewidth=2)
@@ -86,20 +95,24 @@ def get_interval_any(name: str, fun, *args):
     data = {
         'n': [],
         'mean_min': [],
-        "mean": [],
+        'mean': [],
         'mean_max': [],
         'dev_min': [],
-        "dev": [],
+        'dev': [],
         'dev_max': [],
+        'dev_interval_min': [],
+        'dev_interval_max': [],
     }
+
+    figure, axes = plt.subplots(1, 2 * 2, figsize=(20, 10))
 
     for index, n in enumerate(ns):
         sample = fun(*args, size=n)
         mean = sample.mean()
         data["mean"].append(mean)
-        dev = np.std(sample)
+        dev = np.std(sample, ddof=1)
         data["dev"].append(dev)
-        s = math.sqrt(((sample - mean) ** 2 / n).sum())
+        s = math.sqrt(((sample - mean) ** 2).sum() / (n - 1))
         m4 = ((sample - mean) ** 4).sum() / n
         e = m4 / s ** 4 - 3
 
@@ -116,10 +129,47 @@ def get_interval_any(name: str, fun, *args):
         data['mean_max'].append(mean_max)
         data['dev_min'].append(dev_min)
         data['dev_max'].append(dev_max)
+        data['dev_interval_min'].append(mean_min - dev_max)
+        data['dev_interval_max'].append(mean_max + dev_max)
 
+        # Plotting histograms and confidence intervals
+        sns.histplot(sample, ax=axes[index], stat='density', color='#FFEFD0')
+        axes[index].axvline(x=mean_min, color='#D400C9', linewidth=2)
+        axes[index].axvline(x=mean_max, color='#D400C9', linewidth=2)
+        axes[index].axvline(x=mean_min - dev_max, color='#0007FF', linewidth=2)
+        axes[index].axvline(x=mean_max + dev_max, color='#0007FF', linewidth=2)
+
+    # Line plots for mean and standard deviation intervals
+    sns.lineplot(x='x', y='y', data={
+        'x': np.array([data['mean_min'][0], data['mean_max'][0]]),
+        'y': np.array([1, 1]),
+    }, ax=axes[2], color='#D400C9', label=f'{name} mean interval n=20', linewidth=2)
+
+    sns.lineplot(x='x', y='y', data={
+        'x': np.array([data['mean_min'][1], data['mean_max'][1]]),
+        'y': np.array([1.1, 1.1]),
+    }, ax=axes[2], color='#0007FF', label=f'{name} mean interval n=100', linewidth=2)
+
+    axes[2].set_ylim(0.9, 1.2)
+    axes[2].legend()
+
+    sns.lineplot(x='x', y='y', data={
+        'x': np.array([data['dev_min'][0], data['dev_max'][0]]),
+        'y': np.array([1, 1]),
+    }, ax=axes[3], color='#D400C9', label=f'{name} sigma interval n=20', linewidth=2)
+
+    sns.lineplot(x='x', y='y', data={
+        'x': np.array([data['dev_min'][1], data['dev_max'][1]]),
+        'y': np.array([1.1, 1.1]),
+    }, ax=axes[3], color='#0007FF', label=f'{name} sigma interval n=100', linewidth=2)
+
+    axes[3].set_ylim(0.9, 1.2)
+    axes[3].legend()
+
+    plt.show()
     result_df = pd.DataFrame(data)
     print(result_df)
 
 
 get_interval("Normal", np.random.normal, 0, 1)
-get_interval_any("poisson", np.random.poisson, 10)
+get_interval_any("Poisson", np.random.poisson, 10)
