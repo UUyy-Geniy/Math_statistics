@@ -159,3 +159,6 @@ def task1():
 
     save_ellipses_for_mix(sizes)
     save_table_for_mix(sizes)
+
+
+task1()

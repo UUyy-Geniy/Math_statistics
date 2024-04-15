@@ -80,3 +80,6 @@ def task2():
 
     draw(lsm_0, lsm_1, lam_0, lam_1, x, y, 'Выборка без возмущений', 'task2_data/no_noise')
     draw(lsm_02, lsm_12, lam_02, lam_12, x, y2, 'Выборка с возмущенями', 'task2_data/noise')
+
+
+task2()
