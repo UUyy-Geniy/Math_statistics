@@ -1,5 +1,6 @@
 import math
-
+import os
+import matplotlib.pyplot as plt
 from scipy.stats import f
 import numpy as np
 
@@ -35,27 +36,50 @@ class Task4:
         for item in subsample1:
             s1 += (item - mu1) ** 2
 
-        s1 = s1/(n1-1)
+        s1 = s1 / (n1 - 1)
 
-        return s1, sigma1
+        return s1, sigma1, subsample1
+
+    def draw_hist(self, data_tot, item,
+                  title="Default title"):
+        if not os.path.exists('plots'):
+            os.makedirs('plots')
+        plt.figure(figsize=(10, 6))
+
+        for data_label in data_tot.keys():
+            plt.hist(data_tot[data_label], alpha=0.5, label=data_label, edgecolor = "black")
+
+        plt.title(title)
+        plt.legend()
+        plt.savefig(f"plots/{item}.png")
+        plt.clf()
 
     def run(self):
         distr_names = ["normal"]
         alpha = 0.05
-        p = 1 - alpha/2
+        p = 1 - alpha / 2
         N = 100
 
         distr1 = self.get_rvs(distr_names[0], size=N)
         distr2 = self.get_rvs(distr_names[0], size=N)
 
-        for n1, n2 in [[20, 40], [20, 100]]:
-            s1, sigma1 = self.calculate(distr1, n1, 1)
+        num_N = [[20, 40], [20, 100]]
+
+        for ind_N in range(len(num_N)):
+            n1, n2 = num_N[ind_N]
+            s1, sigma1, subdistr1 = self.calculate(distr1, n1, 1)
             print(f"$s_1 = {s1}$")
-            s2, sigma2 = self.calculate(distr2, n2, 2)
+            s2, sigma2, subdistr2 = self.calculate(distr2, n2, 2)
             print(f"$s_2 = {s2}$")
             quantile = f.ppf(p, n1 - 1, n2 - 1)
 
             print(f"$F_B = {(s1 / s2, s2 / s1)[sigma1 < sigma2]}, qu = {quantile}$")
+
+            self.draw_hist({f"Нормальное распределение N={N}": distr1,
+                            f"Выборка 1 мощностью {n1}": subdistr1,
+                            f"Выборка 2 мощностью {n2}": subdistr2},
+                           item=ind_N + 1,
+                           title=f"Распределение выборок для случая {ind_N + 1}")
 
 
 Object = Task4()
